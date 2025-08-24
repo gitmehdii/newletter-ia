@@ -44,14 +44,13 @@ def generate_summary(data, news):
     Résume-les en 3-4 phrases claires et concises, avec des émojis,
     comme une petite newsletter.
     """
-
-    api_url = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
+    api_url = "https://api-inference.huggingface.co/models/bigscience/bloomz-7b1-mt"
     headers = {"Authorization": f"Bearer {os.environ['HF_API_KEY']}"}
     payload = {"inputs": prompt, "parameters": {"max_new_tokens": 250}}
 
     response = requests.post(api_url, headers=headers, json=payload)
     result = response.json()
-
+    print(result)
     if isinstance(result, list) and "generated_text" in result[0]:
         return result[0]["generated_text"]
     else:

@@ -1,10 +1,7 @@
-import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import yfinance as yf
 import feedparser
 import requests
+import os
 
 # ------------------------------
 # Étape 1 : Récupération des données financières
@@ -61,49 +58,17 @@ def generate_summary(data, news):
         return "⚠️ Impossible de générer un résumé cette semaine."
 
 # ------------------------------
-# Étape 4 : Mise en forme email
-# ------------------------------
-def build_email(content):
-    email_sender = os.environ["EMAIL_ADDRESS"]
-    email_receiver = os.environ["EMAIL_TO"]
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "📩 Newsletter Finance - Mardi"
-    msg["From"] = email_sender
-    msg["To"] = email_receiver
-
-    html_content = f"""
-    <html>
-      <body>
-        <h2>📩 Newsletter Finance</h2>
-        <p>{content}</p>
-      </body>
-    </html>
-    """
-    msg.attach(MIMEText(html_content, "html"))
-    return msg
-
-# ------------------------------
-# Étape 5 : Envoi de l’email
-# ------------------------------
-def send_email(msg):
-    email_sender = os.environ["EMAIL_ADDRESS"]
-    email_password = os.environ["EMAIL_PASSWORD"]
-    email_receiver = os.environ["EMAIL_TO"]
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(email_sender, email_password)
-        server.sendmail(email_sender, email_receiver, msg.as_string())
-
-# ------------------------------
 # Étape principale
 # ------------------------------
 def main():
     data = fetch_market_data()
     news = fetch_news()
     summary = generate_summary(data, news)
-    msg = build_email(summary)
-    send_email(msg)
+
+    # Affichage dans la console
+    print("📩 --- Résumé Finance --- 📩\n")
+    print(summary)
+    print("\n📩 --------------------- 📩")
 
 if __name__ == "__main__":
     main()

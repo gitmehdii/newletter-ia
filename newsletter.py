@@ -45,6 +45,7 @@ def generate_summary(data, news):
     comme une petite newsletter.
     """
     api_url = "https://api-inference.huggingface.co/models/bigscience/bloomz-7b1-mt"
+    print("HF_API_KEY =", os.environ.get("HF_API_KEY"))
     headers = {"Authorization": f"Bearer {os.environ['HF_API_KEY']}"}
     payload = {"inputs": prompt, "parameters": {"max_new_tokens": 250}}
 

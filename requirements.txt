@@ -2,5 +2,5 @@ yfinance
 feedparser
 openai
 transformers
-request
+requests
 torch

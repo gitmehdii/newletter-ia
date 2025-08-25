@@ -34,28 +34,46 @@ def fetch_news():
 # ------------------------------
 
 def generate_summary(data, news):
-    prompt = f"""
-    Voici des infos financières de la semaine :
+    # prompt = f"""
+    # Voici des infos financières de la semaine :
 
-    📊 Cours boursiers :
-    {data}
+    # 📊 Cours boursiers :
+    # {data}
 
-    📰 Actualités principales :
-    {news}
+    # 📰 Actualités principales :
+    # {news}
 
-    Résume-les en 3-4 phrases claires et concises, avec des émojis,
-    comme une petite newsletter.
-    """
+    # Résume-les en 3-4 phrases claires et concises, avec des émojis,
+    # comme une petite newsletter.
+    # """
 
-    # Charger un modèle de résumé gratuit (BART)
+    # # Charger un modèle de résumé gratuit (BART)
+    # summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+
+    # # Le modèle n’aime pas les textes trop longs → tronquons si besoin
+    # text = prompt[:1024]
+
+    # summary = summarizer(text, max_length=150, min_length=40, do_sample=False)
+
+    # return summary[0]['summary_text']
     summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
-    # Le modèle n’aime pas les textes trop longs → tronquons si besoin
-    text = prompt[:1024]
+    # Exemple d'article (tu peux remplacer par ton texte)
+    article = """
+    Les marchés financiers ont connu une semaine mouvementée. 
+    Le Nasdaq a enregistré une hausse de 2 %, soutenue par les gains des grandes valeurs technologiques, 
+    tandis que le Dow Jones a reculé légèrement sous l’effet de la baisse du secteur bancaire. 
+    Par ailleurs, la Réserve fédérale a indiqué qu’elle pourrait maintenir ses taux d’intérêt élevés plus longtemps que prévu, 
+    ce qui suscite de nouvelles inquiétudes chez les investisseurs.
+    """
 
+    # Tronquer si l’article est trop long (>1024 tokens)
+    text = article[:1024]
+
+    # Résumer
     summary = summarizer(text, max_length=150, min_length=40, do_sample=False)
 
-    return summary[0]['summary_text']
+    return "📰 Résumé de l'article :\n" + summary[0]['summary_text']
 
 # ------------------------------
 # Étape principale

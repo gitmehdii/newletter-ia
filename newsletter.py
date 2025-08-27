@@ -1,93 +1,291 @@
-import yfinance as yf
-import feedparser
 import requests
-import os
-from transformers import pipeline
+from openai import OpenAI
+import yfinance as yf
+from bs4 import BeautifulSoup
+from datetime import datetime
 
-# ------------------------------
-# Étape 1 : Récupération des données financières
-# ------------------------------
-def fetch_market_data():
-    tickers = ["TSLA", "AAPL", "^GSPC"]  # Tesla, Apple, S&P500
-    data = {}
-    for t in tickers:
-        stock = yf.Ticker(t)
-        hist = stock.history(period="5d")  # Dernière semaine
-        if not hist.empty:
-            last_close = hist["Close"].iloc[-1]
-            data[t] = round(last_close, 2)
-    return data
+client = OpenAI(
+  api_key="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"
+)
 
-# ------------------------------
-# Étape 2 : Récupération des news
-# ------------------------------
-def fetch_news():
-    url = "https://www.reuters.com/rssFeed/businessNews"
-    feed = feedparser.parse(url)
+
+API_KEY = "14791e52672c45cd80ff99d1bc5be2d6"  # Remplace par ta clé
+
+# Liste des entreprises / crypto
+keywords = ["Tesla", "Google", "Microsoft", "Bitcoin"]
+
+# Construire la requête
+query = " OR ".join(keywords)  # recherche des articles contenant n'importe lequel
+
+url = f"https://newsapi.org/v2/everything?q=tesla&language=en&pageSize=9&apiKey={API_KEY}"
+response = requests.get(url)
+data = response.json()
+
+articles = []
+for a in data.get('articles', []):
+    title = a.get('title', 'Pas de titre')
+    content = a.get('content', '')  # texte principal
+    url_article = a.get('url')
+    articles.append(f"{title}. {content}")
+
+# Afficher les articles
+all_articles = "\n\n".join(articles)
+
+
+
+ASSETS = {
+    # Tech US
+    "Apple": "AAPL",
+    "Microsoft": "MSFT",
+    "NVIDIA": "NVDA",
+    "Alphabet": "GOOGL",
+    "Amazon": "AMZN",
+    "Meta": "META",
+    "Tesla": "TSLA",
+
+    # Finance & Investissement
+    "Berkshire Hathaway": "BRK-B",
+    "JPMorgan Chase": "JPM",
+    "Goldman Sachs": "GS",
+
+    # Énergie & Industrie
+    "Saudi Aramco": "2222.SR",
+    "ExxonMobil": "XOM",
+    "Shell": "SHEL",
+
+    # Santé & Pharma
+    "Johnson & Johnson": "JNJ",
+    "Pfizer": "PFE",
+
+    # Consommation & Luxe
+    "Coca-Cola": "KO",
+    "Procter & Gamble": "PG",
+    "LVMH": "MC.PA",
+    "TotalEnergies": "TTE.PA",
+    "Airbus": "AIR.PA",
+
+    # Semi-conducteurs & Asie
+    "TSMC": "TSM",
+    "Samsung": "005930.KQ",
+
+    # Indices & Crypto
+    "S&P 500": "^GSPC",
+    "CAC 40": "^FCHI",
+    "Bitcoin": "BTC-USD",
+    "Ethereum": "ETH-USD",
+}
+
+def get_financials(ticker):
+    """Récupère les données financières de base depuis yfinance"""
+    stock = yf.Ticker(ticker)
+    info = stock.info
+
+    return {
+        "currentPrice": info.get("currentPrice"),
+        "marketCap": info.get("marketCap"),
+        "trailingPE": info.get("trailingPE"),
+        "forwardPE": info.get("forwardPE"),
+        "dividendYield": info.get("dividendYield"),
+        "previousClose": info.get("previousClose"),
+    }
+
+def get_news_yfinance(ticker="TSLA", limit=5):
+    t = yf.Ticker(ticker)
+    news = t.news
+
+    results = []
+    for item in news[:limit]:
+        title = item["content"]["title"]
+        pub_date = item["content"]["pubDate"]
+
+        url = item["content"]["canonicalUrl"]["url"]
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
+            paragraphs = soup.find_all("p")
+            article_text = "\n".join([p.get_text() for p in paragraphs])
+        else:
+            article_text = "⚠️ Impossible de récupérer le contenu."
+
+        result = f"📰 {title}\n📅 Publié le: {pub_date}\n\n{article_text}\n"
+        results.append(result)
+
+    return "\n\n".join(results)
+
+
+def get_news_newsapi(query, n=5):
+    """Récupère les derniers articles NewsAPI"""
+    url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&pageSize={n}&apiKey={API_KEY}"
+    r = requests.get(url).json()
+    
     articles = []
-    for entry in feed.entries[:3]:  # Prendre 3 actus
-        articles.append(f"- {entry.title}")
+    for art in r.get("articles", []):
+        articles.append({
+            "title": art["title"],
+            "publishedAt": art["publishedAt"],
+            "description": art["description"],
+            "url": art["url"]
+        })
     return articles
 
-# ------------------------------
-# Étape 3 : Génération du résumé par IA (HuggingFace)
-# ------------------------------
+def build_financial_summary(name, ticker):
+    """Construit un résumé brut pour GPT"""
+    fin = get_financials(ticker)
+    news = get_news_newsapi(name, n=4)
+    yfinance_news = get_news_yfinance(ticker, limit=4)
 
-def generate_summary(data, news):
-    # prompt = f"""
-    # Voici des infos financières de la semaine :
+    summary = f"### {name} ({ticker})\n"
+    summary += f"- Prix actuel : {fin['currentPrice']}\n"
+    summary += f"- Capitalisation : {fin['marketCap']}\n"
+    summary += f"- PER (TTM) : {fin['trailingPE']}\n"
+    summary += f"- PER (Forward) : {fin['forwardPE']}\n"
+    summary += f"- Dividende : {fin['dividendYield']}\n"
+    summary += f"- Clôture précédente : {fin['previousClose']}\n\n"
 
-    # 📊 Cours boursiers :
-    # {data}
+    summary += "**Articles récents :**\n"
+    for art in news:
+        date = datetime.fromisoformat(art["publishedAt"].replace("Z", "+00:00")).strftime("%Y-%m-%d")
+        summary += f"- ({date}) {art['title']} – {art['description']} [Lien]({art['url']})\n"
 
-    # 📰 Actualités principales :
-    # {news}
+    return summary + yfinance_news
 
-    # Résume-les en 3-4 phrases claires et concises, avec des émojis,
-    # comme une petite newsletter.
-    # """
 
-    # # Charger un modèle de résumé gratuit (BART)
-    # summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+article_for_prompt = ""
+for name, ticker in ASSETS.items():
+        article_for_prompt += "\n" + build_financial_summary(name, ticker)
 
-    # # Le modèle n’aime pas les textes trop longs → tronquons si besoin
-    # text = prompt[:1024]
 
-    # summary = summarizer(text, max_length=150, min_length=40, do_sample=False)
+# Exemple d'utilisation
 
-    # return summary[0]['summary_text']
-    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+response = client.responses.create(
+  model="gpt-4o-mini",
+  input="""Tu es un analyste financier senior. Je vais te donner des articles issus de ma veille (NewsAPI).
+Ta tâche : produire UNIQUEMENT un email en **HTML pur** (aucun texte hors des balises HTML), prêt à coller dans un client mail.
 
-    # Exemple d'article (tu peux remplacer par ton texte)
-    article = """
-    Les marchés financiers ont connu une semaine mouvementée. 
-    Le Nasdaq a enregistré une hausse de 2 %, soutenue par les gains des grandes valeurs technologiques, 
-    tandis que le Dow Jones a reculé légèrement sous l’effet de la baisse du secteur bancaire. 
-    Par ailleurs, la Réserve fédérale a indiqué qu’elle pourrait maintenir ses taux d’intérêt élevés plus longtemps que prévu, 
-    ce qui suscite de nouvelles inquiétudes chez les investisseurs.
-    """
+Contraintes strictes :
+- Pas de JavaScript, pas d’images externes, pas de CSS externe.
+- Utilise un style inline minimal compatible email.
+- Police sûre : system-ui, Arial, sans-serif.
+- Largeur max 600px, avec blocs visuellement différenciés (fonds gris clairs, encadrés, marges).
+- Titres clairs avec un peu de couleur (#333 ou #0056b3).
+- Rédige des phrases complètes et concises : 3–5 lignes par section, pas seulement des puces.
 
-    # Tronquer si l’article est trop long (>1024 tokens)
-    text = article[:1024]
+Structure obligatoire :
+- Titre principal du mail (📩).
+- Bloc "État général du marché" (📊) → résumé global (3–5 lignes).
+- Bloc "Secteurs & entreprises marquants" (🏦/💻) → liste + petits paragraphes pour chaque point.
+- Bloc "Prix & mouvements notables" (💵) → chiffres s’ils sont présents, sinon indique “(pas de chiffre mentionné)”.
+- Bloc "Ambiance & facteurs clés" (💡) → contexte macro/émotion des marchés (3–4 lignes).
+- Conclusion synthétique (✅) → 2–3 phrases avec une tonalité claire et un conseil général.
+- Footer discret (date, source: “Synthèse basée sur votre veille NewsAPI”, note légale courte).
 
-    # Résumer
-    summary = summarizer(text, max_length=150, min_length=40, do_sample=False)
+Important :
+- Si certains chiffres ne sont pas présents, écris “(pas de chiffre mentionné)”, n’invente rien.
+- Ton formel, clair, type note d’investissement.
+- Le HTML doit être complet : <html>, <head>, <body>.
+- Rends le rendu agréable avec encadrés et espacements (marges internes, séparateurs).
 
-    return "📰 Résumé de l'article :\n" + summary[0]['summary_text']
+Voici le template HTML à utiliser et à remplir :
 
-# ------------------------------
-# Étape principale
-# ------------------------------
-def main():
-    data = fetch_market_data()
-    news = fetch_news()
-    summary = generate_summary(data, news)
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Newsletter Hebdo</title>
+</head>
+<body style="margin:0;padding:20px;background:#f4f6f8;font-family:system-ui, Arial, sans-serif;">
 
-    # Affichage dans la console
-    print("📩 --- Résumé Finance --- 📩\n")
-    print(summary)
-    print("\n📩 --------------------- 📩")
+  <!-- Container -->
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.1);border:1px solid #e6e9ef;">
 
-if __name__ == "__main__":
-    main()
+    <!-- Header -->
+    <div style="background:#0056b3;padding:24px;text-align:center;color:#fff;">
+      <h1 style="margin:0;font-size:22px;">📩 Newsletter Hebdomadaire</h1>
+      <p style="margin:6px 0 0;font-size:14px;color:#e2e6ef;">Votre synthèse marchés & entreprises</p>
+    </div>
 
+    <!-- Etat général du marché -->
+    <div style="padding:20px;background:#fafcfe;">
+      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">📊 État général du marché</h2>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+        {{ETAT_GENERAL_DU_MARCHE}}
+      </p>
+    </div>
+
+    <div style="padding:20px;">
+  <h2 style="margin:0 0 12px;color:#0056b3;font-size:18px;">🏦 / 💻 Secteurs & entreprises marquants</h2>
+  
+    <!-- Bloc entreprise générique -->
+    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+      <strong style="color:#111;">{{ENTREPRISE_1_NOM}}</strong>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+        {{ENTREPRISE_1_TEXTE}}
+      </p>
+    </div>
+
+    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+      <strong style="color:#111;">{{ENTREPRISE_2_NOM}}</strong>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+        {{ENTREPRISE_2_TEXTE}}
+      </p>
+    </div>
+
+    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+      <strong style="color:#111;">{{ENTREPRISE_3_NOM}}</strong>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+        {{ENTREPRISE_3_TEXTE}}
+      </p>
+    </div>
+
+    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+      <strong style="color:#111;">{{ENTREPRISE_4_NOM}}</strong>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+        {{ENTREPRISE_4_TEXTE}}
+      </p>
+    </div>
+  </div>
+
+    <!-- Prix & mouvements -->
+    <div style="padding:20px;background:#fffef9;">
+      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">💵 Prix & mouvements notables</h2>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+        {{PRIX_MOUVEMENTS}}
+      </p>
+    </div>
+
+    <!-- Ambiance -->
+    <div style="padding:20px;">
+      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">💡 Ambiance & facteurs clés</h2>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+        {{AMBIANCE_FACTEURS}}
+      </p>
+    </div>
+
+    <!-- Conclusion -->
+    <div style="padding:20px;background:#f7fffa;border-top:2px solid #e0f2e9;">
+      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">✅ Conclusion synthétique</h2>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+        {{CONCLUSION}}
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:16px;text-align:center;font-size:12px;color:#777;background:#f9f9f9;border-top:1px solid #e6e9ef;">
+      <p style="margin:4px 0;">📅 {{DATE}}</p>
+      <p style="margin:4px 0;">Source : Synthèse basée sur votre veille NewsAPI</p>
+      <p style="margin:6px 0 0;color:#aaa;">Note : Ce résumé est fourni à titre informatif et ne constitue pas un conseil en investissement.</p>
+    </div>
+
+  </div>
+</body>
+</html>
+
+
+Voici les articles :
+
+""" + article_for_prompt + "\n Attendu : un document HTML complet, prêt à envoyer.", 
+  store=False,
+)
+
+print(response.output_text)

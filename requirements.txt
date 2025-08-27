@@ -1,6 +1,5 @@
 yfinance
 feedparser
 openai
-transformers
 requests
-torch
+beautifulsoup4

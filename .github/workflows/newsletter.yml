@@ -12,14 +12,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-        
-      - name: Cache Hugging Face models
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/huggingface
-          key: ${{ runner.os }}-huggingface-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-huggingface-
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -37,5 +29,5 @@ jobs:
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           HF_API_KEY: ${{ secrets.HF_API_KEY }}
         run: |
-          python newsletter.py
+          python send_mail.py
 

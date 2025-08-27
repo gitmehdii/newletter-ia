@@ -15,8 +15,7 @@ client = OpenAI(
 
 print(OPENAI_API_KEY)
 
-API_KEY = os.environ.get("OPEN_AI_API_KEY")
-print(API_KEY)
+API_KEY = os.environ.get("NEWSAPI_API_KEY")
 
 ASSETS = {
     # Tech US
@@ -135,6 +134,11 @@ def build_financial_summary(name, ticker):
 
     return summary + yfinance_news
 
+get_news_newsapi("Tesla", 1)
+test = client.responses.create(
+     model="gpt-4o-mini",
+     input= "bonjour, ça va ?")
+print(test.output_text)
 # print("⏳ Searching articles...")
 # article_for_prompt = ""
 # for name, ticker in ASSETS.items():

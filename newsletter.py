@@ -8,18 +8,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import os
 
+OPENAI_API_KEY = os.environ.get("OPEN_AI_API_KEY")
 client = OpenAI(
-  api_key="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"
+  api_key= OPENAI_API_KEY
 )
 
+print(OPENAI_API_KEY)
 
-API_KEY = "14791e52672c45cd80ff99d1bc5be2d6"  # Remplace par ta clé
-
-# Liste des entreprises / crypto
-keywords = ["Tesla", "Google", "Microsoft", "Bitcoin"]
-
-# Construire la requête
-query = " OR ".join(keywords)  # recherche des articles contenant n'importe lequel
+API_KEY = os.environ.get("OPEN_AI_API_KEY")
+print(API_KEY)
 
 url = f"https://newsapi.org/v2/everything?q=tesla&language=en&pageSize=9&apiKey={API_KEY}"
 response = requests.get(url)
@@ -154,168 +151,168 @@ def build_financial_summary(name, ticker):
 
     return summary + yfinance_news
 
-print("⏳ Searching articles...")
-article_for_prompt = ""
-for name, ticker in ASSETS.items():
-        article_for_prompt += "\n" + build_financial_summary(name, ticker)
-print("✅ Articles successfully retrieved")
-# Config SMTP via secrets GitHub
-smtp_server = "smtp.gmail.com"
-smtp_port = 587
-username = os.environ.get("EMAIL_ADDRESS")
-password = os.environ.get("EMAIL_PASSWORD")
+# print("⏳ Searching articles...")
+# article_for_prompt = ""
+# for name, ticker in ASSETS.items():
+#         article_for_prompt += "\n" + build_financial_summary(name, ticker)
+# print("✅ Articles successfully retrieved")
+# # Config SMTP via secrets GitHub
+# smtp_server = "smtp.gmail.com"
+# smtp_port = 587
+# username = os.environ.get("EMAIL_ADDRESS")
+# password = os.environ.get("EMAIL_PASSWORD")
 
-from_email = username
-to_emails = ["azouzmehdi603@gmail.com", "azouz.ms@gmail.com"]
+# from_email = username
+# to_emails = ["azouzmehdi603@gmail.com", "azouz.ms@gmail.com"]
 
-# Construire le message
-msg = MIMEMultipart("alternative")
-msg["Subject"] = "📩 Newsletter Marchés Financiers"
-msg["From"] = from_email
-msg["To"] = ", ".join(to_emails)
+# # Construire le message
+# msg = MIMEMultipart("alternative")
+# msg["Subject"] = "📩 Newsletter Marchés Financiers"
+# msg["From"] = from_email
+# msg["To"] = ", ".join(to_emails)
 
 
-# Exemple d'utilisation
-print("⏳ Generating email...")
-response = client.responses.create(
-  model="gpt-4o-mini",
-  input="""Tu es un analyste financier senior. Je vais te donner des articles issus de ma veille (NewsAPI).
-Ta tâche : produire UNIQUEMENT un email en **HTML pur** (aucun texte hors des balises HTML), prêt à coller dans un client mail.
+# # Exemple d'utilisation
+# print("⏳ Generating email...")
+# response = client.responses.create(
+#   model="gpt-4o-mini",
+#   input="""Tu es un analyste financier senior. Je vais te donner des articles issus de ma veille (NewsAPI).
+# Ta tâche : produire UNIQUEMENT un email en **HTML pur** (aucun texte hors des balises HTML), prêt à coller dans un client mail.
 
-Contraintes strictes :
-- Pas de JavaScript, pas d’images externes, pas de CSS externe.
-- Utilise un style inline minimal compatible email.
-- Police sûre : system-ui, Arial, sans-serif.
-- Largeur max 600px, avec blocs visuellement différenciés (fonds gris clairs, encadrés, marges).
-- Titres clairs avec un peu de couleur (#333 ou #0056b3).
-- Rédige des phrases complètes et concises : 3–5 lignes par section, pas seulement des puces.
+# Contraintes strictes :
+# - Pas de JavaScript, pas d’images externes, pas de CSS externe.
+# - Utilise un style inline minimal compatible email.
+# - Police sûre : system-ui, Arial, sans-serif.
+# - Largeur max 600px, avec blocs visuellement différenciés (fonds gris clairs, encadrés, marges).
+# - Titres clairs avec un peu de couleur (#333 ou #0056b3).
+# - Rédige des phrases complètes et concises : 3–5 lignes par section, pas seulement des puces.
 
-Structure obligatoire :
-- Titre principal du mail (📩).
-- Bloc "État général du marché" (📊) → résumé global (3–5 lignes).
-- Bloc "Secteurs & entreprises marquants" (🏦/💻) → liste + petits paragraphes pour chaque point.
-- Bloc "Prix & mouvements notables" (💵) → chiffres s’ils sont présents, sinon indique “(pas de chiffre mentionné)”.
-- Bloc "Ambiance & facteurs clés" (💡) → contexte macro/émotion des marchés (3–4 lignes).
-- Conclusion synthétique (✅) → 2–3 phrases avec une tonalité claire et un conseil général.
-- Footer discret (date, source: “Synthèse basée sur votre veille NewsAPI”, note légale courte).
-- Dans le footer, remplace {{DATE}} par la date du jour au format "Lundi 26 août 2025" (en français, complet).
+# Structure obligatoire :
+# - Titre principal du mail (📩).
+# - Bloc "État général du marché" (📊) → résumé global (3–5 lignes).
+# - Bloc "Secteurs & entreprises marquants" (🏦/💻) → liste + petits paragraphes pour chaque point.
+# - Bloc "Prix & mouvements notables" (💵) → chiffres s’ils sont présents, sinon indique “(pas de chiffre mentionné)”.
+# - Bloc "Ambiance & facteurs clés" (💡) → contexte macro/émotion des marchés (3–4 lignes).
+# - Conclusion synthétique (✅) → 2–3 phrases avec une tonalité claire et un conseil général.
+# - Footer discret (date, source: “Synthèse basée sur votre veille NewsAPI”, note légale courte).
+# - Dans le footer, remplace {{DATE}} par la date du jour au format "Lundi 26 août 2025" (en français, complet).
 
-Important :
-- Si certains chiffres ne sont pas présents, écris “(pas de chiffre mentionné)”, n’invente rien.
-- Ton formel, clair, type note d’investissement.
-- Le HTML doit être complet : <html>, <head>, <body>.
-- Rends le rendu agréable avec encadrés et espacements (marges internes, séparateurs).
+# Important :
+# - Si certains chiffres ne sont pas présents, écris “(pas de chiffre mentionné)”, n’invente rien.
+# - Ton formel, clair, type note d’investissement.
+# - Le HTML doit être complet : <html>, <head>, <body>.
+# - Rends le rendu agréable avec encadrés et espacements (marges internes, séparateurs).
 
-Voici le template HTML à utiliser et à remplir :
+# Voici le template HTML à utiliser et à remplir :
 
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <title>Newsletter Hebdo</title>
-</head>
-<body style="margin:0;padding:20px;background:#f4f6f8;font-family:system-ui, Arial, sans-serif;">
+# <!doctype html>
+# <html lang="fr">
+# <head>
+#   <meta charset="utf-8">
+#   <title>Newsletter Hebdo</title>
+# </head>
+# <body style="margin:0;padding:20px;background:#f4f6f8;font-family:system-ui, Arial, sans-serif;">
 
-  <!-- Container -->
-  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.1);border:1px solid #e6e9ef;">
+#   <!-- Container -->
+#   <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.1);border:1px solid #e6e9ef;">
 
-    <!-- Header -->
-    <div style="background:#0056b3;padding:24px;text-align:center;color:#fff;">
-      <h1 style="margin:0;font-size:22px;">📩 Newsletter Hebdomadaire</h1>
-      <p style="margin:6px 0 0;font-size:14px;color:#e2e6ef;">Votre synthèse marchés & entreprises</p>
-    </div>
+#     <!-- Header -->
+#     <div style="background:#0056b3;padding:24px;text-align:center;color:#fff;">
+#       <h1 style="margin:0;font-size:22px;">📩 Newsletter Hebdomadaire</h1>
+#       <p style="margin:6px 0 0;font-size:14px;color:#e2e6ef;">Votre synthèse marchés & entreprises</p>
+#     </div>
 
-    <!-- Etat général du marché -->
-    <div style="padding:20px;background:#fafcfe;">
-      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">📊 État général du marché</h2>
-      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
-        {{ETAT_GENERAL_DU_MARCHE}}
-      </p>
-    </div>
+#     <!-- Etat général du marché -->
+#     <div style="padding:20px;background:#fafcfe;">
+#       <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">📊 État général du marché</h2>
+#       <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+#         {{ETAT_GENERAL_DU_MARCHE}}
+#       </p>
+#     </div>
 
-    <div style="padding:20px;">
-  <h2 style="margin:0 0 12px;color:#0056b3;font-size:18px;">🏦 / 💻 Secteurs & entreprises marquants</h2>
+#     <div style="padding:20px;">
+#   <h2 style="margin:0 0 12px;color:#0056b3;font-size:18px;">🏦 / 💻 Secteurs & entreprises marquants</h2>
   
-    <!-- Bloc entreprise générique -->
-    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-      <strong style="color:#111;">{{ENTREPRISE_1_NOM}}</strong>
-      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
-        {{ENTREPRISE_1_TEXTE}}
-      </p>
-    </div>
+#     <!-- Bloc entreprise générique -->
+#     <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+#       <strong style="color:#111;">{{ENTREPRISE_1_NOM}}</strong>
+#       <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+#         {{ENTREPRISE_1_TEXTE}}
+#       </p>
+#     </div>
 
-    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-      <strong style="color:#111;">{{ENTREPRISE_2_NOM}}</strong>
-      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
-        {{ENTREPRISE_2_TEXTE}}
-      </p>
-    </div>
+#     <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+#       <strong style="color:#111;">{{ENTREPRISE_2_NOM}}</strong>
+#       <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+#         {{ENTREPRISE_2_TEXTE}}
+#       </p>
+#     </div>
 
-    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-      <strong style="color:#111;">{{ENTREPRISE_3_NOM}}</strong>
-      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
-        {{ENTREPRISE_3_TEXTE}}
-      </p>
-    </div>
+#     <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+#       <strong style="color:#111;">{{ENTREPRISE_3_NOM}}</strong>
+#       <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+#         {{ENTREPRISE_3_TEXTE}}
+#       </p>
+#     </div>
 
-    <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-      <strong style="color:#111;">{{ENTREPRISE_4_NOM}}</strong>
-      <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
-        {{ENTREPRISE_4_TEXTE}}
-      </p>
-    </div>
-  </div>
+#     <div style="margin-bottom:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+#       <strong style="color:#111;">{{ENTREPRISE_4_NOM}}</strong>
+#       <p style="margin:6px 0 0;font-size:14px;line-height:1.6;color:#444;">
+#         {{ENTREPRISE_4_TEXTE}}
+#       </p>
+#     </div>
+#   </div>
 
-    <!-- Prix & mouvements -->
-    <div style="padding:20px;background:#fffef9;">
-      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">💵 Prix & mouvements notables</h2>
-      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
-        {{PRIX_MOUVEMENTS}}
-      </p>
-    </div>
+#     <!-- Prix & mouvements -->
+#     <div style="padding:20px;background:#fffef9;">
+#       <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">💵 Prix & mouvements notables</h2>
+#       <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+#         {{PRIX_MOUVEMENTS}}
+#       </p>
+#     </div>
 
-    <!-- Ambiance -->
-    <div style="padding:20px;">
-      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">💡 Ambiance & facteurs clés</h2>
-      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
-        {{AMBIANCE_FACTEURS}}
-      </p>
-    </div>
+#     <!-- Ambiance -->
+#     <div style="padding:20px;">
+#       <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">💡 Ambiance & facteurs clés</h2>
+#       <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+#         {{AMBIANCE_FACTEURS}}
+#       </p>
+#     </div>
 
-    <!-- Conclusion -->
-    <div style="padding:20px;background:#f7fffa;border-top:2px solid #e0f2e9;">
-      <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">✅ Conclusion synthétique</h2>
-      <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
-        {{CONCLUSION}}
-      </p>
-    </div>
+#     <!-- Conclusion -->
+#     <div style="padding:20px;background:#f7fffa;border-top:2px solid #e0f2e9;">
+#       <h2 style="margin:0 0 10px;color:#0056b3;font-size:18px;">✅ Conclusion synthétique</h2>
+#       <p style="margin:0;font-size:14px;line-height:1.6;color:#333;">
+#         {{CONCLUSION}}
+#       </p>
+#     </div>
 
-    <!-- Footer -->
-    <div style="padding:16px;text-align:center;font-size:12px;color:#777;background:#f9f9f9;border-top:1px solid #e6e9ef;">
-      <p style="margin:4px 0;">📅 {{DATE}}</p>
-      <p style="margin:6px 0 0;color:#aaa;">Note : Ce résumé est fourni à titre informatif et ne constitue pas un conseil en investissement.</p>
-    </div>
+#     <!-- Footer -->
+#     <div style="padding:16px;text-align:center;font-size:12px;color:#777;background:#f9f9f9;border-top:1px solid #e6e9ef;">
+#       <p style="margin:4px 0;">📅 {{DATE}}</p>
+#       <p style="margin:6px 0 0;color:#aaa;">Note : Ce résumé est fourni à titre informatif et ne constitue pas un conseil en investissement.</p>
+#     </div>
 
-  </div>
-</body>
-</html>
+#   </div>
+# </body>
+# </html>
 
 
-Voici les articles :
+# Voici les articles :
 
-""" + article_for_prompt + "\n Attendu : un document HTML complet, prêt à envoyer.", 
-  store=False,
-)
-print("✅ Email successfully generated")
-html_content = response.output_text
-html_content = html_content.split("```html")[1].strip().rstrip("```").strip()
-print(html_content)
-msg.attach(MIMEText(html_content, "html"))
+# """ + article_for_prompt + "\n Attendu : un document HTML complet, prêt à envoyer.", 
+#   store=False,
+# )
+# print("✅ Email successfully generated")
+# html_content = response.output_text
+# html_content = html_content.split("```html")[1].strip().rstrip("```").strip()
+# print(html_content)
+# msg.attach(MIMEText(html_content, "html"))
 
-print("⏳ Sending email...")
-# Envoyer
-with smtplib.SMTP(smtp_server, smtp_port) as server:
-    server.starttls()
-    server.login(username, password)
-    server.sendmail(from_email, to_emails, msg.as_string())
-print("✅ Email sent successfully")
+# print("⏳ Sending email...")
+# # Envoyer
+# with smtplib.SMTP(smtp_server, smtp_port) as server:
+#     server.starttls()
+#     server.login(username, password)
+#     server.sendmail(from_email, to_emails, msg.as_string())
+# print("✅ Email sent successfully")

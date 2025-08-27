@@ -18,22 +18,6 @@ print(OPENAI_API_KEY)
 API_KEY = os.environ.get("OPEN_AI_API_KEY")
 print(API_KEY)
 
-url = f"https://newsapi.org/v2/everything?q=tesla&language=en&pageSize=9&apiKey={API_KEY}"
-response = requests.get(url)
-data = response.json()
-
-articles = []
-for a in data.get('articles', []):
-    title = a.get('title', 'Pas de titre')
-    content = a.get('content', '')  # texte principal
-    url_article = a.get('url')
-    articles.append(f"{title}. {content}")
-
-# Afficher les articles
-all_articles = "\n\n".join(articles)
-
-
-
 ASSETS = {
     # Tech US
     "Apple": "AAPL",

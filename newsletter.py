@@ -134,7 +134,8 @@ def build_financial_summary(name, ticker):
 
     return summary + yfinance_news
 
-get_news_newsapi("Tesla", 1)
+print(get_news_newsapi("Tesla", 1))
+print("=" * 20)
 test = client.responses.create(
      model="gpt-4o-mini",
      input= "bonjour, ça va ?")

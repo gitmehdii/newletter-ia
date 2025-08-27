@@ -27,7 +27,6 @@ jobs:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          HF_API_KEY: ${{ secrets.HF_API_KEY }}
         run: |
-          python send_mail.py
+          python newsletter.py
 

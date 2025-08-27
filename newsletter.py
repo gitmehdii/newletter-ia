@@ -3,6 +3,10 @@ from openai import OpenAI
 import yfinance as yf
 from bs4 import BeautifulSoup
 from datetime import datetime
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import os
 
 client = OpenAI(
   api_key="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"
@@ -150,14 +154,29 @@ def build_financial_summary(name, ticker):
 
     return summary + yfinance_news
 
-
+print("⏳ Searching articles...")
 article_for_prompt = ""
 for name, ticker in ASSETS.items():
         article_for_prompt += "\n" + build_financial_summary(name, ticker)
+print("✅ Articles successfully retrieved")
+# Config SMTP via secrets GitHub
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
+username = os.environ.get("EMAIL_ADDRESS")
+password = os.environ.get("EMAIL_PASSWORD")
+
+from_email = username
+to_emails = ["azouzmehdi603@gmail.com", "azouz.ms@gmail.com"]
+
+# Construire le message
+msg = MIMEMultipart("alternative")
+msg["Subject"] = "📩 Newsletter Marchés Financiers"
+msg["From"] = from_email
+msg["To"] = ", ".join(to_emails)
 
 
 # Exemple d'utilisation
-
+print("⏳ Generating email...")
 response = client.responses.create(
   model="gpt-4o-mini",
   input="""Tu es un analyste financier senior. Je vais te donner des articles issus de ma veille (NewsAPI).
@@ -287,5 +306,16 @@ Voici les articles :
 """ + article_for_prompt + "\n Attendu : un document HTML complet, prêt à envoyer.", 
   store=False,
 )
+print("✅ Email successfully generated")
+html_content = response.output_text
+html_content = html_content.split("```html")[1].strip().rstrip("```").strip()
+print(html_content)
+msg.attach(MIMEText(html_content, "html"))
 
-print(response.output_text)
+print("⏳ Sending email...")
+# Envoyer
+with smtplib.SMTP(smtp_server, smtp_port) as server:
+    server.starttls()
+    server.login(username, password)
+    server.sendmail(from_email, to_emails, msg.as_string())
+print("✅ Email sent successfully")

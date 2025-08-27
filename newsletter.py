@@ -198,6 +198,7 @@ Structure obligatoire :
 - Bloc "Ambiance & facteurs clés" (💡) → contexte macro/émotion des marchés (3–4 lignes).
 - Conclusion synthétique (✅) → 2–3 phrases avec une tonalité claire et un conseil général.
 - Footer discret (date, source: “Synthèse basée sur votre veille NewsAPI”, note légale courte).
+- Dans le footer, remplace {{DATE}} par la date du jour au format "Lundi 26 août 2025" (en français, complet).
 
 Important :
 - Si certains chiffres ne sont pas présents, écris “(pas de chiffre mentionné)”, n’invente rien.
@@ -292,7 +293,6 @@ Voici le template HTML à utiliser et à remplir :
     <!-- Footer -->
     <div style="padding:16px;text-align:center;font-size:12px;color:#777;background:#f9f9f9;border-top:1px solid #e6e9ef;">
       <p style="margin:4px 0;">📅 {{DATE}}</p>
-      <p style="margin:4px 0;">Source : Synthèse basée sur votre veille NewsAPI</p>
       <p style="margin:6px 0 0;color:#aaa;">Note : Ce résumé est fourni à titre informatif et ne constitue pas un conseil en investissement.</p>
     </div>
 

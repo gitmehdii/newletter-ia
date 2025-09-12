@@ -1,8 +1,6 @@
 name: Newsletter Finance
 
-on:
-  schedule:
-    - cron: "0 9 * * TUE"  # Tous les mardis à 9h UTC
+on: 
   workflow_dispatch:        # Permet de lancer manuellement aussi
 
 jobs:

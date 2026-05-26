@@ -3,6 +3,7 @@ from openai import OpenAI
 import yfinance as yf
 from bs4 import BeautifulSoup
 from datetime import datetime
+from json import JSONDecodeError
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -117,7 +118,7 @@ def get_news_newsapi(query, n=5):
 
     try:
         r = response.json()
-    except ValueError as exc:
+    except JSONDecodeError as exc:
         raise RuntimeError("Invalid response format from NewsAPI") from exc
     
     articles = []

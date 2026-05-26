@@ -112,10 +112,12 @@ def get_news_newsapi(query, n=5):
     try:
         response = requests.get(url, params=params, headers=headers, timeout=15)
         response.raise_for_status()
-        r = response.json()
     except requests.RequestException as exc:
         raise RuntimeError("Failed to fetch data from NewsAPI") from exc
-    except requests.exceptions.JSONDecodeError as exc:
+
+    try:
+        r = response.json()
+    except ValueError as exc:
         raise RuntimeError("Invalid response format from NewsAPI") from exc
     
     articles = []

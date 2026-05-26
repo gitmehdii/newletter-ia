@@ -98,8 +98,18 @@ def get_news_yfinance(ticker="TSLA", limit=5):
 
 def get_news_newsapi(query, n=5):
     """Récupère les derniers articles NewsAPI"""
-    url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&pageSize={n}&apiKey={API_KEY}"
-    r = requests.get(url).json()
+    if not API_KEY:
+        raise ValueError("NEWSAPI_API_KEY is required")
+
+    url = "https://newsapi.org/v2/everything"
+    params = {
+        "q": query,
+        "language": "en",
+        "sortBy": "publishedAt",
+        "pageSize": n,
+    }
+    headers = {"X-Api-Key": API_KEY}
+    r = requests.get(url, params=params, headers=headers, timeout=15).json()
     
     articles = []
     for art in r.get("articles", []):

@@ -3,6 +3,7 @@ from openai import OpenAI
 import yfinance as yf
 from bs4 import BeautifulSoup
 from datetime import datetime
+from json import JSONDecodeError
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -98,8 +99,27 @@ def get_news_yfinance(ticker="TSLA", limit=5):
 
 def get_news_newsapi(query, n=5):
     """Récupère les derniers articles NewsAPI"""
-    url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&pageSize={n}&apiKey={API_KEY}"
-    r = requests.get(url).json()
+    if not API_KEY:
+        raise ValueError("NEWSAPI_API_KEY is required")
+
+    url = "https://newsapi.org/v2/everything"
+    params = {
+        "q": query,
+        "language": "en",
+        "sortBy": "publishedAt",
+        "pageSize": n,
+    }
+    headers = {"X-Api-Key": API_KEY}
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=15)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError("Failed to fetch data from NewsAPI") from exc
+
+    try:
+        r = response.json()
+    except JSONDecodeError as exc:
+        raise RuntimeError("Invalid response format from NewsAPI") from exc
     
     articles = []
     for art in r.get("articles", []):
